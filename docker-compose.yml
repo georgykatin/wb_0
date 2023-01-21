@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+
+  nats-streaming-server:
+    image: nats-streaming:alpine
+    restart: unless-stopped
+    container_name: wb-nats-streaming-server
+    ports:
+      - ":4222"
+      - ":8222"
+    environment:
+      NATS_ClUSTER_ID : "cluster_test"
+      NATS_HOSTNAME : "wb-nats-streaming-server"
+
+    command:
+      - "--store"
+      - "file"
+      - "--dir"
+      - "data"
+    volumes:
+      - ./volumes/nats_data_store:/data:Z
+
+  db:
+    image: postgres
+    restart: unless-stopped
+    container_name: wb_l0-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: "wb"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    volumes:
+      - ./db/model.sql:/docker-entrypoint-initdb.d/create_tables.sql
+      - ./volumes/postgres/data:/var/lib/postgresql/data:Z
+
+
+  nats-publisher:
+    restart: unless-stopped
+    container_name: wb_l0-nats-publisher
+    build:
+      context: .
+      target: publisher
+    ports:
+      - "8081:8081"
+    expose:
+      - "8081"
+    depends_on:
+      - nats-streaming-server
+    links:
+      - nats-streaming-server
+    environment:
+      NATS_ClUSTER_ID: "cluster_test"
+      NATS_HOSTNAME: "wb-nats-streaming-server"
+
+  nats-subscriber:
+    restart: unless-stopped
+    container_name: wb_l0-nats-subscriber
+    build:
+      context: .
+      target: subscriber
+    ports:
+      - "8080:8080"
+    expose:
+      - "8080"
+    depends_on:
+      - db
+      - nats-streaming-server
+    links:
+      - db
+      - nats-streaming-server
+    environment:
+      NATS_ClUSTER_ID: "cluster_test"
+      NATS_HOSTNAME: "wb-nats-streaming-server"
