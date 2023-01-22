@@ -3,7 +3,8 @@ package orders
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
 	"time"
 	"wb/config"
 )
@@ -50,7 +51,7 @@ const (
 	lazyConnect       = false
 )
 
-func NewPgxConn(cfg *config.Config) (*pgx.Conn, error) {
+func NewPgxConn(cfg *config.Config) (*pgxpool.Pool, error) {
 	ctx := context.Background()
 	dataSourceName := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=%s password=%s",
 		cfg.Host,
@@ -59,7 +60,7 @@ func NewPgxConn(cfg *config.Config) (*pgx.Conn, error) {
 		cfg.Database,
 		cfg.Password,
 	)
-	poolCfg, err := pgx.ParseConfig(dataSourceName)
+	poolCfg, err := pgxpool.ParseConfig(dataSourceName)
 	//poolCfg, err := pgxpool.ParseConfig(dataSourceName)
 	if err != nil {
 		return nil, err
@@ -72,11 +73,10 @@ func NewPgxConn(cfg *config.Config) (*pgx.Conn, error) {
 	//poolCfg.MinConns = minConns
 	//poolCfg.LazyConnect = lazyConnect
 
-	//connPool, err := pgxpool.ConnConfig(ctx, poolCfg)
-	connPool, err := pgx.ConnectConfig(ctx, poolCfg)
-	//if err != nil {
-	//return nil, errors.Wrap(err, "pgx.ConnectConfig")
-	//}
+	connPool, err := pgxpool.ConnectConfig(ctx, poolCfg)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Error pgx connect config ")
+	}
 
 	return connPool, nil
 }

@@ -6,7 +6,8 @@ import (
 	"github.com/nats-io/stan.go"
 	"log"
 	"time"
-	"wb/Randomaizer"
+
+	Randomaizer "wb/Randomizer"
 )
 
 type Pub interface {

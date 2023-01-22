@@ -3,7 +3,6 @@ RUN mkdir /go/src/wb
 WORKDIR /go/src/wb
 COPY . .
 RUN go mod download
-#WORKDIR /go/src/wb/main
 
 
 WORKDIR /go/src/wb/main/subscriber
